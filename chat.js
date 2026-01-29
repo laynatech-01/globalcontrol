@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const button = document.getElementById("send-btn");
 
     button.addEventListener("click", enviarMensaje);
+
     input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") enviarMensaje();
     });
@@ -18,14 +19,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function cargarPrompt() {
     try {
-        // Cargamos el JSON combinado con toda la descripción de equipos
-        const r = await fetch("conocimiento.json");
-        const data = await r.json();
-        PROMPT_BASE = JSON.stringify(data); 
-        console.log("Conocimiento técnico cargado");
+        const r = await fetch("info.txt");
+        PROMPT_BASE = await r.text();
+        console.log("Prompt cargado");
     } catch {
         PROMPT_BASE = "";
-        console.warn("No se pudo cargar conocimiento.json");
+        console.warn("No se pudo cargar info.txt");
     }
 }
 
@@ -44,8 +43,9 @@ async function enviarMensaje() {
     input.value = "";
 
     const id = "bot_" + Date.now();
-    agregarMensaje("Analizando...", "bot-msg", id);
-    setEstado("Consultando...");
+    agregarMensaje("...", "bot-msg", id);
+
+    setEstado("Conectando...");
 
     try {
         const r = await fetch(API_URL, {
@@ -53,13 +53,17 @@ async function enviarMensaje() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 pregunta: texto,
-                prompt: PROMPT_BASE // Enviamos toda la base de datos de equipos
+                prompt: PROMPT_BASE
             })
         });
 
         const data = await r.json();
-        document.getElementById(id).innerText = data.answer || "No encontré detalles sobre eso en mi base de datos.";
+
+        document.getElementById(id).innerText =
+            data.answer || "Sin respuesta";
+
         setEstado("Listo");
+
     } catch (e) {
         document.getElementById(id).innerText = "Error de conexión";
         setEstado("Error", true);
